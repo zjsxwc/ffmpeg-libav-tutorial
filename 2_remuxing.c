@@ -1,6 +1,29 @@
 // based on https://ffmpeg.org/doxygen/trunk/remuxing_8c-example.html
+// and https://ffmpeg.org/doxygen/trunk/avio_reading_8c-example.html#_a12
 #include <libavutil/timestamp.h>
+#include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <libavformat/avio.h>
+#include <libavutil/file.h>
+
+struct buffer_data {
+  uint8_t *ptr;
+  size_t size; ///< size left in the buffer
+};
+
+static int read_packet(void *opaque, uint8_t *buf, int buf_size)
+{
+  struct buffer_data *bd = (struct buffer_data *)opaque;
+  buf_size = FFMIN(buf_size, bd->size);
+  if (!buf_size)
+    return AVERROR_EOF;
+  printf("ptr:%p size:%zu\n", bd->ptr, bd->size);
+  /* copy internal buffer data to buf */
+  memcpy(buf, bd->ptr, buf_size);
+  bd->ptr  += buf_size;
+  bd->size -= buf_size;
+  return buf_size;
+}
 
 int main(int argc, char **argv)
 {
@@ -13,6 +36,11 @@ int main(int argc, char **argv)
   int number_of_streams = 0;
   int fragmented_mp4_options = 0;
 
+  AVIOContext *avio_ctx = NULL;
+  uint8_t *buffer = NULL, *avio_ctx_buffer = NULL;
+  size_t buffer_size, avio_ctx_buffer_size = 4096;
+  struct buffer_data bd = { 0 };
+
   if (argc < 3) {
     printf("You need to pass at least two parameters.\n");
     return -1;
@@ -23,10 +51,36 @@ int main(int argc, char **argv)
   in_filename  = argv[1];
   out_filename = argv[2];
 
-  if ((ret = avformat_open_input(&input_format_context, in_filename, NULL, NULL)) < 0) {
-    fprintf(stderr, "Could not open input file '%s'", in_filename);
+  /* slurp file content into buffer */
+  ret = av_file_map(in_filename, &buffer, &buffer_size, 0, NULL);
+  if (ret < 0)
+    goto end;
+  /* fill opaque structure used by the AVIOContext read callback */
+  bd.ptr  = buffer;
+  bd.size = buffer_size;
+
+  if (!(input_format_context = avformat_alloc_context())) {
+    ret = AVERROR(ENOMEM);
     goto end;
   }
+  avio_ctx_buffer = av_malloc(avio_ctx_buffer_size);
+  if (!avio_ctx_buffer) {
+    ret = AVERROR(ENOMEM);
+    goto end;
+  }
+  avio_ctx = avio_alloc_context(avio_ctx_buffer, avio_ctx_buffer_size,
+      0, &bd, &read_packet, NULL, NULL);
+  if (!avio_ctx) {
+    ret = AVERROR(ENOMEM);
+    goto end;
+  }
+  input_format_context->pb = avio_ctx;
+  ret = avformat_open_input(&input_format_context, NULL, NULL, NULL);
+  if (ret < 0) {
+    fprintf(stderr, "Could not open input\n");
+    goto end;
+  }
+
   if ((ret = avformat_find_stream_info(input_format_context, NULL)) < 0) {
     fprintf(stderr, "Failed to retrieve input stream information");
     goto end;
@@ -64,11 +118,13 @@ int main(int argc, char **argv)
       ret = AVERROR_UNKNOWN;
       goto end;
     }
+
     ret = avcodec_parameters_copy(out_stream->codecpar, in_codecpar);
     if (ret < 0) {
       fprintf(stderr, "Failed to copy codec parameters\n");
       goto end;
     }
+
   }
   // https://ffmpeg.org/doxygen/trunk/group__lavf__misc.html#gae2645941f2dc779c307eb6314fd39f10
   av_dump_format(output_format_context, 0, out_filename, 1);
@@ -126,6 +182,12 @@ int main(int argc, char **argv)
   av_write_trailer(output_format_context);
 end:
   avformat_close_input(&input_format_context);
+
+  if (avio_ctx) {
+    av_freep(&avio_ctx->buffer);
+    av_freep(&avio_ctx);
+  }
+  av_file_unmap(buffer, buffer_size);
   /* close output */
   if (output_format_context && !(output_format_context->oformat->flags & AVFMT_NOFILE))
     avio_closep(&output_format_context->pb);
