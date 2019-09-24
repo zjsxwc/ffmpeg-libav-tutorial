@@ -1,0 +1,50 @@
+
+Mux? Demux? Remux? Huh?
+
+Fri 27 August 2010
+
+Recently I had a reader contacting me about demuxing files. He wanted to know what it was, and why on earth would you want to do it?
+
+So I sent him an email explaining what "muxing" as a whole is and how demuxing factors into it.
+
+I thought that the rest of my readers might be able to benefit from the knowledge that I expressed to him, so here goes!
+Imagine A World...
+
+Nah, just kidding. Imagine that you have ripped a DVD or Blu-ray to your hard disk. If you have no idea how to do this, I have published several guides on how to go about doing so.
+
+So you have these files contained on your hard drive. For a DVD, it will look like an assortment of VOBs (among others, IFO, BUP, etc). For a Blu-ray disk, it will look like M2TS files (among MANY others, but M2TS are the only files that actually contain the video content). Many of you are familiar with files to the extent that you think there is just data in them. And to an extent you are right. But what if I told you that there are in fact severalfiles, or more specifically tracks, contained in your precious media files.
+
+If you think about it, it makes sense. How else would you be able to watch a movie and have both video and audio, and maybe an optional subtitle track?
+
+This is what Muxing does. It takes these individual tracks and combines them into one VOB or M2TS file (depending on the output specification, DVD or Blu-ray). Chances are you won't be doing much muxing unless you are getting into the nitty gritty details of DVD compilation and Blu-ray generation. Actually that is not quite true, as many programs such as BD Rebuilder or MultiAVCHD mux files for you. Okay, so chances are you won't be doing much muxing by hand.
+Muxing
+
+To summarize, muxing is the act of combining two or more signals into one. In the digital media file world, this means combining a video track, one or more audio tracks, and possible subtitle tracks. There are other tracks as well, such as chapters, but they aren't that important for the purpose of this post.
+Demuxing
+
+I'll give you one guess. Did you guess that demuxing is the opposite of muxing? Then your wrong! Ha, just kidding. You were correct!
+
+Demuxing is the act of taking a muxed file such as a VOB or M2TS file and splitting it back up into its component streams. Some of you may be thinking, "Why on earth would anyone want to do that?"
+
+Well, I'll tell you. Demuxing is useful in situations where you want to deal with a specific component of a media file, without affecting the file as a whole. Confused?
+
+Let me try this: Imagine that you have ripped a DVD to your hard drive. But, you have a subtitle track that you have custom edited for a particular reason (like replacing the word "man" with "BATMAAAN!!). Awesome, no?
+
+Okay, so you have this ripped disk and custom subtitle track. What you want to do is replace the DVD's original subtitle track with your custom subtitle track. In order to do so, you must first demuxing the DVD's main movie into it's primary components.
+
+These often look like the following for a DVD:
+
+    .m2v file (video)
+    .ac3 or dts file (audio)
+    .idx/.sub file (subtitles)
+
+Now that you have the original components, you can remux (REcombine the video files via MUXing) the video and audio tracks with your custom subtitle track. Doing it this way ensures that there is absolutely no quality loss, plus you get your awesome Batman subtitle track! How cool is that?!
+Another Use
+
+Not enough for you? Well imagine if you want to compress a media file. But you don't want to lose any audio quality. So you demux the original media file, compress just the video file using your favorite
+program, and then mux the compressed video track with the original audio track. Now you have a smaller file size, while still retaining the original audio. Satisfied?
+Conclusion
+
+Well that about wraps it up. Again, muxing is the process of combining multiple streams/file into a single stream/file. Demuxing is the inverse of muxing. And remuxing? I think you get what remuxing is...
+
+If not, let me know in the comments! ;)
